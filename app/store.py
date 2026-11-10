@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Any
 
 
@@ -17,8 +18,16 @@ def load_tasks() -> list[dict[str, Any]]:
 
 def save_tasks(tasks: list[dict[str, Any]]) -> None:
     """Persist task records back to disk."""
-    with DATA_FILE.open("w", encoding="utf-8") as handle:
-        json.dump(tasks, handle, indent=2)
+    temporary_file = NamedTemporaryFile(
+        mode="w", encoding="utf-8", dir=DATA_FILE.parent, delete=False
+    )
+    temporary_path = Path(temporary_file.name)
+    try:
+        with temporary_file:
+            json.dump(tasks, temporary_file, indent=2)
+        temporary_path.replace(DATA_FILE)
+    finally:
+        temporary_path.unlink(missing_ok=True)
 
 
 def next_task_id(tasks: list[dict[str, Any]]) -> int:
